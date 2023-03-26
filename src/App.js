@@ -2,7 +2,7 @@ import React from 'react'
 import './style/main.css'
 import { GiShoppingBag } from 'react-icons/gi'
 import RatingStars from './Components/RatingStars';
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import ShoppingCart from './Components/ShoppingCart';
 
 const products = [
@@ -59,8 +59,13 @@ const products = [
 function App() {
 
   const [cartsVisibility, setCartsVisibility] = useState(false);
-  const [productsInCart, setProductsInCart] = useState([]);
+  const [productsInCart, setProductsInCart] = useState(JSON.parse(localStorage.getItem('shopping-cart')
+  ) || []
+  );
 
+  useEffect(() => {
+    localStorage.setItem('shopping-cart', JSON.stringify(productsInCart));
+  },[productsInCart])
   const addProductToCart = (product) => {
     const newProduct = {
       ...product,
@@ -72,15 +77,37 @@ function App() {
     ])
   }
 
+  const onQuantityChange = (productId, count) => {
+    setProductsInCart((oldState) => {
+      const productsIndex = oldState.findIndex(( item ) => item.id === productId)
+      if (productsIndex !== -1 ) {
+        oldState[productsIndex].count = count;
+      }
+      return [...oldState]
+    })
+  }
+
+  const onProductRemove = (product) => {
+    setProductsInCart((oldState) => {
+      const productsIndex = oldState.findIndex(( item ) => item.id === product.id)
+      if (productsIndex !== -1 ) {
+        oldState.splice(productsIndex, 1);
+      }
+      return [...oldState]
+    })
+  }
+
   return (
     <div className='App'>
       <ShoppingCart visibility={cartsVisibility}
       products={productsInCart} onClose ={() => setCartsVisibility(false)}
+      onQuantityChange = {onQuantityChange} onProductRemove = {onProductRemove}
       />
       <div className='navbar'>
         <h3>Logo</h3>
         <button className='btn shopping-cart-btn' onClick={() => setCartsVisibility(true)}>
           <GiShoppingBag size={24} />
+          {productsInCart.length > 0 && (<span className='product-count'>{productsInCart.length}</span>)}
         </button>
       </div>
       <main>
@@ -106,7 +133,7 @@ function App() {
                   <button className='btn'>
                     Details
                   </button>
-                  <button className='btn'>
+                  <button className='btn' onClick={() => addProductToCart(product)}>
                   Add to Cart
                   </button>
                 </div>
